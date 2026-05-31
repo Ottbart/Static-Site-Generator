@@ -1,3 +1,5 @@
+from split_blocks import BlockType, block_to_block_type, markdown_to_blocks
+
 class HTMLNode:
     def __init__(self, tag=None, value=None, children=None, props=None):
         self.tag = tag              #A string representing the HTML tag name (e.g. "p", "a", "h1", etc.)
@@ -56,4 +58,100 @@ class ParentNode(HTMLNode):
         children_string = ""
         for child in self.children:
             children_string += child.to_html()
-        return f"<{self.tag}>{children_string}</{self.tag}>"
+        return f"<{self.tag}{self.props_to_html()}>{children_string}</{self.tag}>"
+
+def markdown_to_html_node(markdown):
+    #
+    blocks = markdown_to_blocks(markdown)
+    children = [make_block_node(block) for block in blocks]
+    return ParentNode("div", children)
+
+
+def make_block_node(block):
+    #
+    block_type = block_to_block_type(block)
+    if block_type == BlockType.HEADING:
+        return make_heading_node(block)
+    elif block_type == BlockType.CODE:
+        return make_code_node(block)
+    elif block_type == BlockType.QUOTE:
+        return make_quote_node(block)
+    elif block_type == BlockType.UNORDERED_LIST:
+        return make_list_node(block, ordered=False)
+    elif block_type == BlockType.ORDERED_LIST:
+        return make_list_node(block, ordered=True)
+    return make_paragraph_node(block)
+
+
+def make_heading_node(block):
+    # Extract the heading level and text and return a ParentNode with the appropriate tag (e.g. "h1", "h2", etc.) and children representing the text of the heading.
+    level = get_heading_level(block)
+    text = block[level + 1 :].strip()
+    return ParentNode(f"h{level}", text_to_children(text))
+
+
+def get_heading_level(block):
+    count = 0
+    while count < len(block) and block[count] == "#":
+        count += 1
+    return count
+
+
+def make_code_node(block):
+    # Extract the code text from the block and return a <pre><code> node with raw code text.
+    from textnode import TextNode, TextType, text_node_to_html_node
+
+    code_text = extract_code_text(block)
+    code_text_node = TextNode(code_text, TextType.CODE)
+    code_html_node = text_node_to_html_node(code_text_node)
+    return ParentNode("pre", [code_html_node])
+
+
+def extract_code_text(block):
+    # Removes the opening and closing code fences and preserves raw inner code formatting.
+    if not block.startswith("```"):
+        return block
+
+    start = block.find("\n")
+    if start == -1:
+        return ""
+
+    content = block[start + 1 :]
+    if content.endswith("```"):
+        content = content[: -3]
+    content = "\n".join(line.strip() for line in content.splitlines()) + "\n"
+    return content
+
+
+def make_quote_node(block):
+    #Removes the leading > characters from each line of the block, and returns a ParentNode with the tag "blockquote" and the quote text as the children.
+    quote_text = "\n".join(
+        line[1:].lstrip() if line.startswith(">") else line
+        for line in block.splitlines()
+    )
+    return ParentNode("blockquote", text_to_children(quote_text))
+
+
+def make_list_node(block, ordered=False):
+    #Splits the block into lines, and for each line, removes the leading - or 1. characters, and returns a ParentNode with the tag "ul" or "ol" (depending on whether ordered is False or True) and the list items as children. Each list item should be represented as a ParentNode with the tag "li" and the item text as the children.
+    lines = [line.strip() for line in block.splitlines() if line.strip()]
+    item_nodes = []
+    for line in lines:
+        if ordered:
+            _, item_text = line.split(". ", 1)
+        else:
+            item_text = line[2:]
+        item_nodes.append(ParentNode("li", text_to_children(item_text.strip())))
+    return ParentNode("ol" if ordered else "ul", item_nodes)
+
+
+def make_paragraph_node(block):
+    block = " ".join(line.strip() for line in block.splitlines())
+    return ParentNode("p", text_to_children(block))
+
+
+def text_to_children(text):
+    from split_nodes import text_to_textnodes
+    from textnode import text_node_to_html_node
+
+    return [text_node_to_html_node(node) for node in text_to_textnodes(text)]
