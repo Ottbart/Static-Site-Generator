@@ -1,6 +1,6 @@
 import unittest
 from textwrap import dedent
-from htmlnode import HTMLNode, LeafNode, ParentNode, markdown_to_html_node
+from htmlnode import HTMLNode, LeafNode, ParentNode, markdown_to_html_node, extract_title
 
 class TestTextNode(unittest.TestCase):
     def test_goodcase(self):
@@ -99,3 +99,9 @@ class TestTextNode(unittest.TestCase):
 
     if __name__ == "__main__":
         unittest.main()
+
+    def test_extract_title(self):
+        md = "# My Title\n\nThis is some content."
+        title = extract_title(md)
+        self.assertEqual(title, "My Title")
+

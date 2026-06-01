@@ -155,3 +155,10 @@ def text_to_children(text):
     from textnode import text_node_to_html_node
 
     return [text_node_to_html_node(node) for node in text_to_textnodes(text)]
+
+def extract_title(markdown):
+    #finds the heading by identifying the first line that starts with #, and returns the text of that heading as the title. If no heading is found, it raises an exception.
+    for line in markdown.splitlines():
+        if line.startswith("#"):
+            return line[1:].strip()
+    raise ValueError("No heading found")
