@@ -61,12 +61,12 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, bas
     for item in os.listdir(dir_path_content):
         print(f"Processing {item} in {dir_path_content}")
         if os.path.isdir(os.path.join(dir_path_content, item)):
-            generate_pages_recursive(os.path.join(dir_path_content, item), template_path, os.path.join(dest_dir_path, item))
+            generate_pages_recursive(os.path.join(dir_path_content, item), template_path, os.path.join(dest_dir_path, item), basepath=basepath)
         elif item.endswith(".md"):
-            generate_page(os.path.join(dir_path_content, item), template_path, os.path.join(dest_dir_path, item[:-3] + ".html")) 
+            generate_page(os.path.join(dir_path_content, item), template_path, os.path.join(dest_dir_path, item[:-3] + ".html"), basepath=basepath)
 
 def main():
-    basepath = sys.argv[0]
+    basepath = sys.argv[1] if len(sys.argv) > 1 else "/"
     move_files("static", "docs")
 
     generate_pages_recursive("content/", "template.html", "docs/", basepath=basepath)
