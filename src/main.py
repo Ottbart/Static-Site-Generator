@@ -1,5 +1,6 @@
 import shutil
 import os
+import sys
 
 
 
@@ -20,7 +21,7 @@ def move_files(src, dst):
             print(f"Copying file {s} to {d}.")
             shutil.copy2(s, d)
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath="/"):
     # This function should read the markdown file from from_path, convert it to HTML, read the template from template_path, insert the HTML into the template, and write the final HTML to dest_path.
     from htmlnode import markdown_to_html_node, extract_title
     
@@ -39,6 +40,8 @@ def generate_page(from_path, template_path, dest_path):
             template
             .replace("{{ Title }}", title)
             .replace("{{ Content }}", html_node.to_html())
+            .replace('href="/', f'href="{basepath}')
+            .replace('src="/', f'src="{basepath}')
         )
 
         #if dest_path does not exist, create it.
@@ -53,7 +56,7 @@ def generate_page(from_path, template_path, dest_path):
         with open(dest_path, "w") as f:
             f.write(final_html)
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath="/"):
     # This function should recursively crawl every entry in the content directory and create a html document for every md found.
     for item in os.listdir(dir_path_content):
         print(f"Processing {item} in {dir_path_content}")
@@ -63,9 +66,9 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
             generate_page(os.path.join(dir_path_content, item), template_path, os.path.join(dest_dir_path, item[:-3] + ".html")) 
 
 def main():
-  
-    move_files("static", "public")
+    basepath = sys.argv[0]
+    move_files("static", "docs")
 
-    generate_pages_recursive("content/", "template.html", "public/")
+    generate_pages_recursive("content/", "template.html", "docs/", basepath=basepath)
 
 main()
