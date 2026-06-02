@@ -35,22 +35,37 @@ def generate_page(from_path, template_path, dest_path):
     with open(template_path) as f:
         template = f.read()
 
-    final_html = (
-        template
-        .replace("{{ Title }}", title)
-        .replace("{{ Content }}", html_node.to_html())
-    )
+        final_html = (
+            template
+            .replace("{{ Title }}", title)
+            .replace("{{ Content }}", html_node.to_html())
+        )
 
-    # If dest_path is a directory, write the page as index.html inside it.
-    if dest_path.endswith(os.sep) or os.path.isdir(dest_path) or not os.path.splitext(dest_path)[1]:
-        dest_path = os.path.join(dest_path, "index.html")
+        #if dest_path does not exist, create it.
+        #if not os.path.exists(dest_path):
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        
+        # If dest_path is a directory, write the page as index.html inside it.
+        #if dest_path.endswith(os.sep) or os.path.isdir(dest_path) or not os.path.splitext(dest_path)[1]:
+        #dest_path = os.path.join(dest_path, "index.html")
 
-    with open(dest_path, "w") as f:
-        f.write(final_html)
+
+        with open(dest_path, "w") as f:
+            f.write(final_html)
+
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    # This function should recursively crawl every entry in the content directory and create a html document for every md found.
+    for item in os.listdir(dir_path_content):
+        print(f"Processing {item} in {dir_path_content}")
+        if os.path.isdir(os.path.join(dir_path_content, item)):
+            generate_pages_recursive(os.path.join(dir_path_content, item), template_path, os.path.join(dest_dir_path, item))
+        elif item.endswith(".md"):
+            generate_page(os.path.join(dir_path_content, item), template_path, os.path.join(dest_dir_path, item[:-3] + ".html")) 
 
 def main():
   
     move_files("static", "public")
-    generate_page("content/index.md", "template.html", "public/")
+
+    generate_pages_recursive("content/", "template.html", "public/")
 
 main()
